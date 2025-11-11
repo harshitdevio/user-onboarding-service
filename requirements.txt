@@ -2,8 +2,8 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 sqlalchemy==0.0.22
-psycopg2-binary==2.9.9
-alembic==1.13.2
+psycopg2-binary (>=2.9.11,<3.0.0)
+alembic (>=1.17.1,<2.0.0)
 celery[redis]==5.4.0
 redis==5.0.8
 python-jose[cryptography]==3.3.0

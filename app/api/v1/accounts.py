@@ -5,7 +5,7 @@ from app.db.models import Account
 from app.db.session import get_db
 from uuid import uuid4
 
-router = APIRouter()
+router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 @router.post("/", response_model=AccountOut)
 def create_account(payload: AccountCreate, db: Session = Depends(get_db)):

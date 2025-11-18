@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="test")
+router = APIRouter(prefix="/test")
 
 @router.get("/greet")
 def greet():

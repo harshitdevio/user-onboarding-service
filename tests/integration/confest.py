@@ -24,3 +24,17 @@ async def integration_client(integration_app: FastAPI):
         follow_redirects=True
     ) as client:
         yield client
+
+# clean DB between tests (specifically for this Fintech)
+@pytest.fixture(autouse=True)
+async def clean_database(integration_db: AsyncSession):
+    """
+    Runs before every test.
+    Useful in a Fintech system to avoid cross-test data leak.
+    Rolls back any open transaction and expires all objects.
+    """
+    try:
+        yield
+    finally:
+        await integration_db.rollback()
+        await integration_db.expire_all()

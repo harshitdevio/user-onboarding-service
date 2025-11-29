@@ -14,3 +14,13 @@ async def integration_db(db_session: AsyncSession):
 @pytest.fixture()
 def integration_app() -> FastAPI:
     return fastapi_app
+
+# async client (Real App + Real DB)
+@pytest.fixture()
+async def integration_client(integration_app: FastAPI):
+    async with AsyncClient(
+        app=integration_app,
+        base_url="http://test",
+        follow_redirects=True
+    ) as client:
+        yield client

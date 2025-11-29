@@ -42,6 +42,16 @@ async def test_engine():
     yield engine
     await engine.dispose()
 
+@pytest.fixture(scope="session", autouse=True)
+async def prepare_database(test_engine):
+    """
+    Drop + create schema at the beginning of the integration test suite.
+    Fully isolated from development DB.
+    """
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
 
 # FastAPI App + Override get_db
 @pytest.fixture()

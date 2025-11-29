@@ -53,6 +53,30 @@ async def prepare_database(test_engine):
         await conn.run_sync(Base.metadata.create_all)
 
 
+@pytest.fixture
+async def async_db(test_engine):
+    """
+    Provides a fresh SQLAlchemy AsyncSession for each test.
+    Uses SAVEPOINT transaction strategy to isolate each test.
+    """
+
+    AsyncSessionLocal = sessionmaker(
+        bind=test_engine,
+        class_=AsyncSession,
+        autoflush=False,
+        expire_on_commit=False,
+        autocommit=False,
+    )
+
+    async with AsyncSessionLocal() as session:
+        trans = await session.begin()  # outer transaction
+        try:
+            yield session
+        finally:
+            await trans.rollback()
+            await session.close()
+
+
 # FastAPI App + Override get_db
 @pytest.fixture()
 def integration_app(async_db) -> FastAPI:

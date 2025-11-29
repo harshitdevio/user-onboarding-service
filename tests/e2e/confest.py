@@ -18,3 +18,20 @@ async def e2e_client(e2e_app: FastAPI):
         follow_redirects=True,
     ) as client:
         yield client
+
+# clean DB state between tests
+@pytest.fixture(autouse=True)
+async def e2e_db_cleaner(db_session):
+    """
+    Auto-clean database state between E2E tests.
+    Prevents cross-test leaks & flaky workflows.
+    
+    Even though E2E shouldn't access DB directly,
+    we still clean it behind the scenes.
+    """
+    try:
+        yield
+    finally:
+        # Rollback open transactions & expire cached state
+        await db_session.rollback()
+        await db_session.expire_all()

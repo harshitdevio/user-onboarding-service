@@ -98,3 +98,22 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 
     async with async_session() as session:
         yield session    
+
+# FastAPI Dependency Override
+@pytest.fixture()
+def override_app(db_session):
+
+    app = fastapi_app
+
+    async def _override_get_db():
+        async with db_session as s:
+            yield s
+
+    # Apply override
+    app.dependency_overrides.clear()
+    app.dependency_overrides[settings.get_db_dependency] = _override_get_db
+
+    yield app
+
+    # Cleanup overrides after test
+    app.dependency_overrides.clear()

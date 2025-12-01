@@ -86,19 +86,6 @@ async def test_engine(postgres_container):
 
     await engine.dispose()
 
-# Async test DB sessions.
-async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
-    async_session = sessionmaker(
-        bind=test_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        autoflush=False,
-        autocommit=False,
-    )
-
-    async with async_session() as session:
-        yield session    
-
 # FastAPI Dependency Override
 @pytest.fixture()
 def override_app(db_session):

@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 from uuid import uuid4
-from app.db.models.user import User
+from app.db.models.User.user_core import User
 from httpx import AsyncClient
 from fastapi import FastAPI
 
@@ -84,7 +84,6 @@ async def test_user(async_db):
         id=uuid4(),
         email="test@example.com",
         hashed_password="fakehashed",
-        is_active=True,
     )
     async_db.add(user)
     await async_db.commit()

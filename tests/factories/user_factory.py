@@ -3,7 +3,7 @@ from uuid import uuid4
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.user import User
+from app.db.models.User.user_core import User
 
 # Base user factory
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):

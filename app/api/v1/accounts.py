@@ -5,7 +5,7 @@ from typing import Annotated
 from app.schemas.account import AccountCreate
 from app.services.accounts_service import account_service
 from app.db.session import get_db 
-from app.db.models.user import User
+from app.db.models.User.user_core import User
 from app.auth.dependencies import get_current_user 
 from sqlalchemy.orm import Session
 

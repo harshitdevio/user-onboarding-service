@@ -2,6 +2,7 @@ import asyncio
 import pytest
 from uuid import uuid4
 from app.db.models.User.user_core import User
+from app.db.models.User.user_auth import UserAuth
 from httpx import AsyncClient
 from fastapi import FastAPI
 
@@ -83,12 +84,20 @@ async def test_user(async_db):
     user = User(
         id=uuid4(),
         email="test@example.com",
-        hashed_password="fakehashed",
     )
     async_db.add(user)
+    await async_db.flush()
+
+    auth = UserAuth(
+        user_id=user.id,
+        hashed_password="fakehashed",
+    )
+    async_db.add(auth)
+
     await async_db.commit()
     await async_db.refresh(user)
     return user
+
 
 
 # FastAPI App + Override get_db

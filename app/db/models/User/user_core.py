@@ -32,11 +32,18 @@ class User(Base):
     )
 
     # Relationships
+    accounts: Mapped[list["Account"]] = relationship(        # pyright: ignore
+        "Account",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
     auth: Mapped["UserAuth"] = relationship(                 # pyright: ignore
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan"
     )
+
     kyc: Mapped["UserKYC"] = relationship(                  # pyright: ignore
         back_populates="user",
         uselist=False,

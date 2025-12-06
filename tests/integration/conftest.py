@@ -55,22 +55,12 @@ def prepare_database(test_engine):
 
 @pytest.fixture
 async def async_db(test_engine):
-    """
-    Provides a fresh SQLAlchemy AsyncSession for each test.
-    Uses SAVEPOINT transaction strategy to isolate each test.
-    """
+    async_session = async_sessionmaker(test_engine, class_=AsyncSession)
 
-    AsyncSessionLocal = async_sessionmaker(
-        bind=test_engine,
-        class_=AsyncSession,
-        autoflush=False,
-        expire_on_commit=False,
-        autocommit=False,
-    )
-
-    async with AsyncSessionLocal() as session:
-        async with session.begin():
-            yield session
+    async with async_session() as session:
+        trans = await session.begin()         
+        yield session
+        await trans.rollback() 
    
 @pytest.fixture
 async def test_user(async_db):

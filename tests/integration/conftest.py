@@ -7,7 +7,7 @@ from httpx import AsyncClient
 from fastapi import FastAPI
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.main import app as fastapi_app
 from app.db.base import Base
@@ -63,7 +63,7 @@ async def async_db(test_engine):
     Uses SAVEPOINT transaction strategy to isolate each test.
     """
 
-    AsyncSessionLocal = sessionmaker(
+    AsyncSessionLocal = async_sessionmaker(
         bind=test_engine,
         class_=AsyncSession,
         autoflush=False,
@@ -72,13 +72,9 @@ async def async_db(test_engine):
     )
 
     async with AsyncSessionLocal() as session:
-        trans = await session.begin()  # outer transaction
-        try:
+        async with session.begin():
             yield session
-        finally:
-            await trans.rollback()
-            await session.close()
-
+   
 @pytest.fixture
 async def test_user(async_db):
     user = User(

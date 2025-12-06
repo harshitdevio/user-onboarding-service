@@ -46,15 +46,12 @@ async def test_engine():
     await engine.dispose()
 
 @pytest.fixture(scope="session", autouse=True)
-async def prepare_database(test_engine):
-    """
-    Drop + create schema at the beginning of the integration test suite.
-    Fully isolated from development DB.
-    """
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+def prepare_database(test_engine):
+    sync_engine = test_engine.sync_engine
 
+    with sync_engine.begin() as conn:
+        Base.metadata.drop_all(conn)
+        Base.metadata.create_all(conn)
 
 @pytest.fixture
 async def async_db(test_engine):

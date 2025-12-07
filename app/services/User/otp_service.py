@@ -9,5 +9,25 @@ def generate_otp() -> str:
     return str(random.randint(100000, 999999))
 
 
+async def send_otp(phone: str):
+    #Check rate limit
+    count_key = f"otp_count:{phone}"
+    count = await redis_client.incr(count_key)
+
+    if count == 1:
+        await redis_client.expire(count_key, OTP_EXPIRY)
+
+    if count > OTP_MAX_REQUESTS:
+        raise Exception("Too many OTP requests")
+
+    # Generate and store OTP
+    otp = generate_otp()
+    otp_key = f"otp:{phone}"
+    await redis_client.set(otp_key, otp, ex=OTP_EXPIRY)
+
+    # Send via provider (dummy)
+    print(f"SMS to {phone}: {otp}")  # replace with real SMS API
+
+    return True
 
 

@@ -5,6 +5,7 @@ from app.db.models.User.user_core import User
 from app.db.models.User.user_auth import UserAuth
 from httpx import AsyncClient
 from fastapi import FastAPI
+from redis.asyncio import Redis
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -22,6 +23,14 @@ TEST_DATABASE_URL = (
     if hasattr(settings, "TEST_DATABASE_URL")
     else "postgresql+asyncpg://postgres:postgres@localhost:5433/testdb"
 )
+
+@pytest.fixture
+async def redis_test():
+    client = Redis.from_url("redis://localhost:6380", decode_responses=True)
+    await client.flushall()
+    yield client
+    await client.flushall()
+    await client.close()
 
 @pytest.fixture(scope="session")
 def event_loop():

@@ -13,8 +13,7 @@ async def test_send_otp_first_request():
     mock_redis.expire.return_value = True
     mock_redis.set.return_value = True
     with patch("app.services.User.otp_service.generate_otp", return_value="123456"):
-        with patch("app.core.redis.redis_client", mock_redis):
-
+        with patch("app.services.User.otp_service.redis_client", mock_redis):
             result = await send_otp(phone)
 
             # Assertions

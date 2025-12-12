@@ -21,3 +21,9 @@ async def _clear_failed_attempts(phone: str) -> None:
     # delete both keys if they exist
     await redis_client.delete(attempts_key)
     await redis_client.delete(lock_key)
+
+async def is_locked(phone: str) -> bool:
+    """Return whether phone is currently locked from verification attempts."""
+    lock_key = f"otp_locked:{phone}"
+    val = await redis_client.get(lock_key)
+    return bool(val)

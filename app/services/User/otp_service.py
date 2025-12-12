@@ -4,11 +4,6 @@ import random
 OTP_EXPIRY = 300 
 OTP_MAX_REQUESTS = 3
 
-# generate OTP
-def generate_otp() -> str:
-    return str(random.randint(100000, 999999))
-
-
 async def send_otp(phone: str):
     #Check rate limit
     count_key = f"otp_count:{phone}"

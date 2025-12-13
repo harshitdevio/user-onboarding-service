@@ -1,13 +1,13 @@
 from app.core.redis import redis_client
 from app.auth.OTP.otp_exceptions import OTPRateLimitExceeded
 
-OTP_RESEND_COOLDOWN = 30
-
-OTP_MAX_IN_WINDOW = 3
-OTP_WINDOW = 5 * 60
-
-OTP_DAILY_LIMIT = 10
-OTP_DAILY_TTL = 24 * 60 * 60
+from app.core.security.otp import (
+    OTP_RESEND_COOLDOWN,
+    OTP_MAX_IN_WINDOW,
+    OTP_WINDOW,
+    OTP_DAILY_LIMIT,
+    OTP_DAILY_TTL,
+)
 
 
 async def enforce_otp_rate_limit(phone: str) -> None:

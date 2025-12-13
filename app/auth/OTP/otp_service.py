@@ -84,27 +84,33 @@ async def verify_otp(phone: str, user_otp: str) -> bool:
         True if OTP verification succeeds.
     """
     phone = normalize_phone(phone)
+    masked_phone = _mask_phone(phone)
+
+    logger.info("OTP verification initiated", extra={"phone": masked_phone})
+
     if await is_locked(phone):
-        raise OTPLocked(
-            "Too many failed verification attempts. Try later."
-        )
+        logger.warning("OTP verification attempt blocked due to lock", extra={"phone": masked_phone})
+        raise OTPLocked("Too many failed verification attempts. Try later.")
 
     otp_key = f"otp:{phone}"
     saved_otp: str | None = await redis_client.get(otp_key)
 
     if not saved_otp:
-        await _increment_failed_attempts(phone)
-        raise OTPExpired(
-            "OTP expired or not found. Request a new OTP."
-        )
+        attempts = await _increment_failed_attempts(phone)
+        logger.warning("OTP expired or missing", extra={"phone": masked_phone, "attempts": attempts})
+        raise OTPExpired("OTP expired or not found. Request a new OTP.")
 
     if saved_otp != user_otp:
         attempts: int = await _increment_failed_attempts(phone)
-        raise OTPMismatch(
-            f"OTP incorrect. Attempt {attempts}/{OTP_VERIFY_MAX_ATTEMPTS}."
+        logger.warning(
+            "Incorrect OTP attempt",
+            extra={"phone": masked_phone, "attempts": attempts, "max_attempts": OTP_VERIFY_MAX_ATTEMPTS}
         )
+        raise OTPMismatch(f"OTP incorrect. Attempt {attempts}/{OTP_VERIFY_MAX_ATTEMPTS}.")
 
     await redis_client.delete(otp_key)
     await _clear_failed_attempts(phone)
+
+    logger.info("OTP verified successfully", extra={"phone": masked_phone})
 
     return True

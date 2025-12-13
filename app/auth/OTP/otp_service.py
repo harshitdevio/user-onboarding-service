@@ -4,6 +4,8 @@ from app.core.redis import redis_client
 from app.core.securities import generate_otp
 from app.interegation.SMS.base import ConsoleSMSProvider
 from app.core.Utils.phone import normalize_phone
+from app.core.logging import get_logger, _mask_phone
+from app.auth.OTP.rate_limit import enforce_otp_rate_limit
 from app.auth.OTP.bruteforce import (
     is_locked,
     _increment_failed_attempts,
@@ -22,6 +24,7 @@ from app.core.security.otp import (
     OTP_VERIFY_MAX_ATTEMPTS,
 )
 
+logger = get_logger(__name__)
 
 async def send_otp(phone: str) -> bool:
     """
@@ -39,25 +42,31 @@ async def send_otp(phone: str) -> bool:
         True if OTP generation and storage succeeds.
     """
     phone = normalize_phone(phone)
-    #Check rate limit
-    count_key = f"otp_count:{phone}"
-    request_count: int = await redis_client.incr(count_key)
+    masked_phone = _mask_phone(phone)
 
-    if request_count == 1:
-        await redis_client.expire(count_key, OTP_EXPIRY)
+    logger.info("OTP request initiated", extra={"phone": masked_phone})
 
-    if request_count > OTP_MAX_REQUESTS:
-        raise OTPRateLimitExceeded(
-            "Too many OTP requests, Try again later"
+    try:
+        await enforce_otp_rate_limit(phone)
+    except OTPRateLimitExceeded:
+        logger.warning(
+            "OTP rate limit exceeded",
+            extra={"phone": masked_phone}
         )
+        raise
 
     otp: str = generate_otp(6)
     otp_key = f"otp:{phone}"
+
     await redis_client.set(otp_key, otp, ex=OTP_EXPIRY)
 
     sms_provider = ConsoleSMSProvider()
+    await sms_provider.send(phone, "Your OTP is ******")
 
-    await sms_provider.send(phone, f"Your OTP is {otp}")
+    logger.info(
+        "OTP generated and sent successfully",
+        extra={"phone": masked_phone}
+    )
 
     return True
 

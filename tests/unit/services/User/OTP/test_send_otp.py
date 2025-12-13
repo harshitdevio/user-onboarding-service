@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from app.services.User.otp_service import send_otp, generate_otp
+from app.services.OTP.otp_service import send_otp, generate_otp
 
 
 OTP_EXPIRY = 300       

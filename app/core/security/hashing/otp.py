@@ -41,3 +41,22 @@ def hash_otp(*, otp: str, identifier: str) -> str:
     ).hexdigest()
 
     return digest
+
+def verify_otp(
+    *,
+    otp: str,
+    identifier: str,
+    stored_hash: str,
+) -> bool:
+    """
+    Constant-time OTP verification.
+    """
+    if not otp or not stored_hash:
+        return False
+
+    try:
+        computed_hash = hash_otp(otp=otp, identifier=identifier)
+    except ValueError:
+        return False
+
+    return hmac.compare_digest(computed_hash, stored_hash)

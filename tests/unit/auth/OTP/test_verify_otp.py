@@ -131,3 +131,35 @@ async def test_verify_otp_success(mocker):
     assert result is True
     redis_delete.assert_called_once_with(f"otp:{phone}")
     clear_attempts.assert_called_once_with(phone)
+
+
+@pytest.mark.asyncio
+async def test_verify_otp_clears_failed_attempts_on_success(mocker):
+    phone = "+919876543210"
+
+    mocker.patch(
+        "app.auth.OTP.otp_service.normalize_phone",
+        return_value=phone
+    )
+    mocker.patch(
+        "app.auth.OTP.otp_service.is_locked",
+        new=AsyncMock(return_value=False)
+    )
+    mocker.patch(
+        "app.auth.OTP.otp_service.redis_client.get",
+        new=AsyncMock(return_value="000000")
+    )
+
+    clear_attempts = mocker.patch(
+        "app.auth.OTP.otp_service._clear_failed_attempts",
+        new=AsyncMock()
+    )
+
+    mocker.patch(
+        "app.auth.OTP.otp_service.redis_client.delete",
+        new=AsyncMock()
+    )
+
+    await verify_otp(phone, "000000")
+
+    clear_attempts.assert_called_once()

@@ -1,10 +1,10 @@
 from typing import Final
 
 from app.core.redis import redis_client
-from app.core.securities import generate_otp
-from app.interegation.SMS.base import ConsoleSMSProvider
+from app.interegation.SMS.console import ConsoleSMSProvider
 from app.core.Utils.phone import normalize_phone
-from app.core.logging import get_logger, _mask_phone
+from app.core.security.masking import _mask_phone
+from app.core.logging import get_logger
 from app.auth.OTP.rate_limit import enforce_otp_rate_limit
 from app.auth.OTP.bruteforce import (
     is_locked,
@@ -19,8 +19,8 @@ from app.auth.OTP.otp_exceptions import (
 )
 
 from app.core.security.otp import (
+    generate_otp,
     OTP_EXPIRY,
-    OTP_MAX_REQUESTS,
     OTP_VERIFY_MAX_ATTEMPTS,
 )
 

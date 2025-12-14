@@ -47,3 +47,35 @@ async def test_send_otp_success(mocker):
     sms_send.assert_called_once()
 
 
+
+@pytest.mark.asyncio
+async def test_send_otp_rate_limit_exceeded(mocker):
+    phone = "+91 9876543210"
+
+    mocker.patch(
+        "app.auth.OTP.service.normalize_phone",
+        return_value=phone
+    )
+
+    mocker.patch(
+        "app.auth.OTP.service.enforce_otp_rate_limit",
+        new=AsyncMock(side_effect=OTPRateLimitExceeded())
+    )
+
+    redis_set = mocker.patch(
+        "app.auth.OTP.service.redis_client.set",
+        new=AsyncMock()
+    )
+
+    sms_send = mocker.patch(
+        "app.auth.OTP.service.ConsoleSMSProvider.send",
+        new=AsyncMock()
+    )
+
+    with pytest.raises(OTPRateLimitExceeded):
+        await send_otp(phone)
+
+    redis_set.assert_not_called()
+    sms_send.assert_not_called()
+
+

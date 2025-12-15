@@ -17,3 +17,12 @@ def get_pepper() -> str:
             f"{PEPPER_ENV_KEY} must be set for cryptographic operations"
         )
     return pepper
+
+def apply_pepper(secret: str, pepper: str) -> str:
+    """
+    Combine secret with pepper using explicit boundary.
+    """
+    if not secret:
+        raise ValueError("Secret cannot be empty")
+
+    return f"{secret}::{pepper}"

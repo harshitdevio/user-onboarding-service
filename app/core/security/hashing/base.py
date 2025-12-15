@@ -35,3 +35,7 @@ def constant_time_equals(a: str, b: str) -> bool:
         return False
 
     return hmac.compare_digest(a, b)
+
+
+class HashingError(Exception):
+    """Base exception for hashing-related failures."""

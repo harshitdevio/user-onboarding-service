@@ -26,3 +26,12 @@ def apply_pepper(secret: str, pepper: str) -> str:
         raise ValueError("Secret cannot be empty")
 
     return f"{secret}::{pepper}"
+
+def constant_time_equals(a: str, b: str) -> bool:
+    """
+    Prevent timing attacks during secret comparison.
+    """
+    if not a or not b:
+        return False
+
+    return hmac.compare_digest(a, b)

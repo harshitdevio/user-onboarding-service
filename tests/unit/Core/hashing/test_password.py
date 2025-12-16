@@ -33,3 +33,18 @@ class TestPasswordHasherInitialization:
         with patch("app.core.security.hashing.password.get_pepper", return_value="test-pepper-secret"):
             hasher = PasswordHasher()
             assert hasher._pepper == "test-pepper-secret"
+
+    def test_fails_when_pepper_missing(self):
+        """Should raise RuntimeError when pepper is not set."""
+        with patch("app.core.security.hashing.password.get_pepper", side_effect=RuntimeError("PASSWORD_PEPPER must be set for cryptographic operations")):
+            with pytest.raises(RuntimeError, match="PASSWORD_PEPPER must be set"):
+                PasswordHasher()
+
+    def test_pepper_loaded_once_during_init(self):
+        """Should load pepper only once during initialization, not per operation."""
+        with patch("app.core.security.hashing.password.get_pepper", return_value="test-pepper") as mock_get_pepper:
+            hasher = PasswordHasher()
+            hasher.hash("password123")
+            hasher.hash("another-password")
+            
+            assert mock_get_pepper.call_count == 1

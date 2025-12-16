@@ -15,3 +15,12 @@ _pin_context = CryptContext(
     argon2__hash_len=32,
     argon2__salt_size=16,
 )
+
+def hash_pin(pin: str) -> str:
+    if not pin or not pin.isdigit():
+        raise ValueError("PIN must be numeric")
+
+    pepper = get_pepper()
+    peppered = apply_pepper(pin, pepper)
+
+    return _pin_context.hash(peppered)

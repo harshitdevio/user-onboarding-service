@@ -41,3 +41,11 @@ def verify_secret(secret: str, hashed: str) -> bool:
         return _secret_context.verify(peppered, hashed)
     except UnknownHashError:
         return False
+    
+
+def needs_rehash(hashed: str) -> bool:
+    """
+    Check if a stored secret hash needs upgrading.
+    Useful when security parameters change.
+    """
+    return _secret_context.needs_update(hashed)

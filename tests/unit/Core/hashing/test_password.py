@@ -21,7 +21,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from passlib.exc import UnknownHashError
 
-from app.core.security.hashing.password import PasswordHasher
+from app.core.security.hashing.password import PasswordHasher, pwd_context
 from app.core.security.hashing.base import HashingError
 
 
@@ -48,3 +48,21 @@ class TestPasswordHasherInitialization:
             hasher.hash("another-password")
             
             assert mock_get_pepper.call_count == 1
+
+
+class TestPasswordHasherArgon2Configuration:
+    def test_uses_argon2id_variant(self):
+        hash_ = pwd_context.hash("password123")
+        assert hash_.startswith("$argon2id$")
+
+    def test_memory_cost_configured_correctly(self):
+        hash_ = pwd_context.hash("password123")
+        assert "m=65536" in hash_
+
+    def test_time_cost_configured_correctly(self):
+        hash_ = pwd_context.hash("password123")
+        assert "t=3" in hash_
+
+    def test_parallelism_configured_correctly(self):
+        hash_ = pwd_context.hash("password123")
+        assert "p=1" in hash_

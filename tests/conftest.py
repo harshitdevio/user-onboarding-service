@@ -124,3 +124,7 @@ async def client(override_app: FastAPI):
         follow_redirects=True,
     ) as ac:
         yield ac
+
+@pytest.fixture(autouse=True)
+def set_test_pepper(monkeypatch):
+    monkeypatch.setenv("PASSWORD_PEPPER", "test-pepper-secret")

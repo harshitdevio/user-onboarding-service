@@ -22,7 +22,11 @@ from app.core.security.hashing.password import PasswordHasher, pwd_context
 from app.core.security.hashing.base import HashingError
 
 
+import base64
 
+def b64decode_nopad(data: str) -> bytes:
+    padding = "=" * (-len(data) % 4)
+    return base64.b64decode(data + padding)
 
 class TestPasswordHasherInitialization:
     def test_initializes_when_pepper_is_available(self):
@@ -123,4 +127,18 @@ class TestPasswordHasherHash:
         assert hashed.startswith("$argon2id$")
 
 
+class TestPasswordHasherOutputProperties:
+    def test_salt_size_is_16_bytes(self):
+        hash_ = pwd_context.hash("password123")
+        salt_b64 = hash_.split("$")[-2]
+        salt = b64decode_nopad(salt_b64)
+
+        assert len(salt) == 16
+
+    def test_hash_length_is_32_bytes(self):
+        hash_ = pwd_context.hash("password123")
+        hash_b64 = hash_.split("$")[-1]
+        digest = b64decode_nopad(hash_b64)
+
+        assert len(digest) == 32
 

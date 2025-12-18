@@ -18,3 +18,10 @@ class OTPMismatch(OTPException):
 
 class OTPRateLimitExceeded(Exception):
     pass
+
+class OTPVerificationLocked(Exception):
+    pass
+
+
+class OTPVerificationAttemptsExceeded(Exception):
+    pass

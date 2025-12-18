@@ -6,6 +6,8 @@ from app.auth.OTP.service import send_otp, verify_otp
 from app.schemas.User.signup import (
     PhoneSubmitRequest,
     PhoneSubmitResponse,
+    OTPVerifyRequest, 
+    OTPVerifyResponse
 )
 
 
@@ -27,3 +29,11 @@ async def verify_otp_route(payload: VerifyOTP):
 @router.post("/signup/phone", response_model=PhoneSubmitResponse)
 async def submit_phone(payload: PhoneSubmitRequest):
     return await UserOnboarding.submit_phone(payload.phone)
+
+
+@router.post("/signup/verify-otp", response_model=OTPVerifyResponse)
+async def verify_otp_endpoint(payload: OTPVerifyRequest):
+    return await UserOnboarding.verify_otp(
+        phone=payload.phone,
+        otp=payload.otp,
+    )

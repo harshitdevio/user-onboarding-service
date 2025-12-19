@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.User.pre_user import PreUser
-from app.domain.user.status import OnboardingState
+
 
 class PreUserRepository:
     """
@@ -136,22 +136,3 @@ class PreUserRepository:
         )
         await db.commit()
 
-    async def create_preuser(
-        *,
-        db: AsyncSession,
-        phone: str,
-    ) -> PreUser:
-        """
-        Create or update a PreUser after OTP verification.
-
-        Idempotent by phone.
-        Safe to call multiple times.
-        """
-
-        repo = PreUserRepository()
-
-        return await repo.upsert_by_phone(
-            db,
-            phone=phone,
-            onboarding_state=OnboardingState.OTP_VERIFIED,
-        )

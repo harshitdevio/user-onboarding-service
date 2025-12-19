@@ -1,14 +1,24 @@
-from fastapi import APIRouter, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.schemas.User.login import RequestOTP, VerifyOTP
-from app.orchestration.signup import UserOnboarding
+from app.orchestration.UserOnboarding import UserOnboarding
 from app.auth.OTP.service import send_otp, verify_otp
 from app.schemas.User.signup import (
     PhoneSubmitRequest,
     PhoneSubmitResponse,
     OTPVerifyRequest, 
-    OTPVerifyResponse
+    OTPVerifyResponse, 
+    SetPasswordRequest
 )
+from app.db.session import get_db
+
+from app.orchestration.UserOnboarding import (
+    get_verified_phone, 
+    PasswordAlreadySet,
+    InvalidOnboardingState
+)    
+
 
 
 router = APIRouter(tags=["Auth"])
@@ -37,3 +47,20 @@ async def verify_otp_endpoint(payload: OTPVerifyRequest):
         phone=payload.phone,
         otp=payload.otp,
     )
+
+@router.post("/signup/set-password", status_code=204)
+async def set_signup_password(
+    payload: SetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    phone: str = Depends(get_verified_phone),  # OTP context
+):
+    try:
+        await UserOnboarding.set_password(
+            db=db,
+            phone=phone,
+            password=payload.password,
+        )
+    except PasswordAlreadySet:
+        raise HTTPException(409, "Password already set")
+    except InvalidOnboardingState:
+        raise HTTPException(409, "Invalid onboarding state")

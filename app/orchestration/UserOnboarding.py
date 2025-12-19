@@ -10,6 +10,22 @@ from app.schemas.User.signup import (
     OTPVerifyResponse,
 )
 from app.services.OTP.verify_otp import verify_otp_flow
+from app.services.User.preuser_credentials import (
+    set_preuser_password,
+    InvalidPreUserState,
+    CredentialsAlreadySet,
+)
+
+class UserOnboardingError(Exception):
+    pass
+
+
+class PasswordAlreadySet(UserOnboardingError):
+    pass
+
+
+class InvalidOnboardingState(UserOnboardingError):
+    pass
 
 
 class UserOnboarding:
@@ -79,3 +95,26 @@ class UserOnboarding:
             phone=phone,
             status=OnboardingState.PREUSER_CREATED,
         )
+    
+
+    @staticmethod
+    async def set_password(
+        *,
+        db: AsyncSession,
+        phone: str,
+        password: str,
+    ) -> None:
+        """
+        Handle password setup after OTP verification.
+        """
+
+        try:
+            await set_preuser_password(
+                db=db,
+                phone=phone,
+                raw_password=password,
+            )
+        except CredentialsAlreadySet:
+            raise PasswordAlreadySet()
+        except InvalidPreUserState:
+            raise InvalidOnboardingState()

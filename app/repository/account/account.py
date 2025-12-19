@@ -1,5 +1,4 @@
-# app/repository/account/account.py
-
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.account import Account
@@ -26,3 +25,19 @@ class AccountRepository:
         await db.commit()
         await db.refresh(account)
         return account
+
+    async def upgrade_to_full(
+        self,
+        *,
+        db: AsyncSession,
+        account_id: int,
+    ) -> None:
+        await db.execute(
+            update(Account)
+            .where(Account.id == account_id)
+            .values(
+                tier="FULL",
+                daily_limit=None,  
+            )
+        )
+        await db.commit()

@@ -30,6 +30,16 @@ from app.services.account.create_limited_account import (
 )
 from app.services.kyc.submit_kyc import submit_kyc, KYCAlreadySubmitted
 from app.services.kyc.verify_kyc import approve_kyc, reject_kyc
+from app.services.account.upgrade import upgrade_account_to_full
+
+class UserOnboarding:
+    ...
+    @staticmethod
+    async def upgrade_to_full(*, db, account) -> None:
+        """
+        STEP 12: Upgrade account to FULL tier and remove limits
+        """
+        await upgrade_account_to_full(db=db, account=account)
 
 
 
@@ -246,3 +256,10 @@ class UserOnboarding:
             user=user,
             admin_id=admin_id,
         )
+
+    @staticmethod
+    async def upgrade_to_full(*, db, account) -> None:
+        """
+        STEP 12: Upgrade account to FULL tier and remove limits
+        """
+        await upgrade_account_to_full(db=db, account=account)

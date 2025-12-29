@@ -8,6 +8,7 @@ from app.core.logging import get_logger
 from app.core.security.rate_limit import enforce_otp_rate_limit
 from app.core.security.hashing.otp import hash_otp
 from app.core.security.hashing.otp import verify_otp as hash_verify_otp
+from app.domain.auth.otp_purpose import OTPPurpose
 
 from app.auth.OTP.bruteforce import (
     is_locked,
@@ -24,39 +25,41 @@ from app.auth.OTP.otp_exceptions import (
 from app.core.security.otp import (
     generate_otp,
     OTP_EXPIRY,
-    OTP_VERIFY_MAX_ATTEMPTS, 
-    OTP_LOCKOUT_TTL, 
+    OTP_VERIFY_MAX_ATTEMPTS,
+    OTP_LOCKOUT_TTL,
     OTP_VERIFY_WINDOW
 )
 
 logger = get_logger(__name__)
 
-async def send_otp(phone: str) -> bool:
-    """
-    Generate and send a One-Time Password (OTP) to the given phone number.
 
-    Enforces request-level rate limiting to prevent OTP abuse.
+def _otp_key(phone: str, purpose: OTPPurpose) -> str:
+    return f"otp:{purpose}:{phone}"
 
-    Args:
-        phone: Phone number for which the OTP should be generated.
 
-    Raises:
-        OTPRateLimitExceeded: If OTP request limit is exceeded.
+def _fail_key(phone: str, purpose: OTPPurpose) -> str:
+    return f"otp_fail:{purpose}:{phone}"
 
-    Returns:
-        True if OTP generation and storage succeeds.
-    """
+
+def _lock_key(phone: str, purpose: OTPPurpose) -> str:
+    return f"otp_lock:{purpose}:{phone}"
+
+
+async def send_otp(phone: str, purpose: OTPPurpose) -> bool:
     phone = normalize_phone(phone)
     masked_phone = _mask_phone(phone)
 
-    logger.info("OTP request initiated", extra={"phone": masked_phone})
+    logger.info(
+        "OTP request initiated",
+        extra={"phone": masked_phone, "purpose": purpose}
+    )
 
     try:
         await enforce_otp_rate_limit(phone)
     except OTPRateLimitExceeded:
         logger.warning(
             "OTP rate limit exceeded",
-            extra={"phone": masked_phone}
+            extra={"phone": masked_phone, "purpose": purpose}
         )
         raise
 
@@ -64,8 +67,9 @@ async def send_otp(phone: str) -> bool:
     otp_hash: str = hash_otp(
         otp=otp,
         identifier=phone,
-    )    
-    otp_key = f"otp:{phone}"
+    )
+
+    otp_key = _otp_key(phone, purpose)
 
     await redis_client.set(otp_key, otp_hash, ex=OTP_EXPIRY)
 
@@ -74,39 +78,24 @@ async def send_otp(phone: str) -> bool:
 
     logger.info(
         "OTP generated and sent successfully",
-        extra={"phone": masked_phone}
+        extra={"phone": masked_phone, "purpose": purpose}
     )
 
     return True
 
 
-
-async def verify_otp(phone: str, user_otp: str) -> bool:
-    """
-    Verify a One-Time Password (OTP) for a given phone number.
-
-    Implements:
-    - OTP hashing verification
-    - Constant-time comparison
-    - Attempt limits & lockout
-    - TTL enforcement
-
-    Raises:
-        OTPLocked: If the phone is locked due to excessive failed attempts.
-        OTPExpired: If the OTP is missing or expired.
-        OTPMismatch: If the OTP does not match.
-    """
+async def verify_otp(phone: str, user_otp: str, purpose: OTPPurpose) -> bool:
     phone = normalize_phone(phone)
     masked_phone = _mask_phone(phone)
 
-    otp_key = f"otp:{phone}"
-    fail_key = f"otp_fail:{phone}"
-    lock_key = f"otp_lock:{phone}"
+    otp_key = _otp_key(phone, purpose)
+    fail_key = _fail_key(phone, purpose)
+    lock_key = _lock_key(phone, purpose)
 
     if await redis_client.exists(lock_key):
         logger.warning(
             "OTP verification blocked due to lockout",
-            extra={"phone": masked_phone}
+            extra={"phone": masked_phone, "purpose": purpose}
         )
         raise OTPLocked()
 
@@ -114,7 +103,7 @@ async def verify_otp(phone: str, user_otp: str) -> bool:
     if not stored_hash:
         logger.warning(
             "OTP expired or missing",
-            extra={"phone": masked_phone}
+            extra={"phone": masked_phone, "purpose": purpose}
         )
         raise OTPExpired()
 
@@ -123,22 +112,24 @@ async def verify_otp(phone: str, user_otp: str) -> bool:
         identifier=phone,
         stored_hash=stored_hash,
     ):
-        # Increment fail counter
         fail_count = await redis_client.incr(fail_key)
         await redis_client.expire(fail_key, OTP_VERIFY_WINDOW)
 
         if fail_count >= OTP_VERIFY_MAX_ATTEMPTS:
-            # Lock the phone for OTP_LOCKOUT_TTL
             await redis_client.set(lock_key, "1", ex=OTP_LOCKOUT_TTL)
             logger.warning(
                 "OTP verification failed: lockout triggered",
-                extra={"phone": masked_phone}
+                extra={"phone": masked_phone, "purpose": purpose}
             )
             raise OTPLocked()
 
         logger.warning(
             "OTP verification failed",
-            extra={"phone": masked_phone, "fail_count": fail_count}
+            extra={
+                "phone": masked_phone,
+                "purpose": purpose,
+                "fail_count": fail_count
+            }
         )
         raise OTPMismatch()
 
@@ -147,7 +138,7 @@ async def verify_otp(phone: str, user_otp: str) -> bool:
 
     logger.info(
         "OTP verified successfully",
-        extra={"phone": masked_phone}
+        extra={"phone": masked_phone, "purpose": purpose}
     )
 
     return True

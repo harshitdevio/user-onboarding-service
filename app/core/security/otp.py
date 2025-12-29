@@ -10,7 +10,8 @@ def generate_otp(length: int = DEFAULT_OTP_LENGTH) -> str:
     value = secrets.randbelow(upper) 
     return str(value).zfill(length)
 
-OTP_EXPIRY: Final[int] = 300
+OTP_TTL: Final[int] = 300
+OTP_EXPIRY: Final[int] = OTP_TTL
 OTP_MAX_REQUESTS: Final[int] = 3
 
 OTP_VERIFY_MAX_ATTEMPTS: Final[int] = 5

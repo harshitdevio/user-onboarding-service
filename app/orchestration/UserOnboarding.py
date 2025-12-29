@@ -1,11 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import date
 
-from app.auth.OTP.service import issue_otp
+from app.services.OTP.issue_otp import issue_otp
 from app.core.Utils.phone import normalize_phone
-from app.core.security.rate_limit import enforce_otp_rate_limit
 from app.domain.user.status import OnboardingState
-from app.repository.user.pre_user import create_preuser
+from app.domain.user.preuser_onboarding import create_preuser
 from app.schemas.User.signup import (
     PhoneSubmitResponse,
     OTPVerifyResponse,
@@ -31,16 +30,7 @@ from app.services.account.create_limited_account import (
 from app.services.kyc.submit_kyc import submit_kyc, KYCAlreadySubmitted
 from app.services.kyc.verify_kyc import approve_kyc, reject_kyc
 from app.services.account.upgrade import upgrade_account_to_full
-
-class UserOnboarding:
-    ...
-    @staticmethod
-    async def upgrade_to_full(*, db, account) -> None:
-        """
-        STEP 12: Upgrade account to FULL tier and remove limits
-        """
-        await upgrade_account_to_full(db=db, account=account)
-
+from app.domain.auth.otp_purpose import OTPPurpose
 
 
 class UserOnboardingError(Exception):
@@ -54,6 +44,7 @@ class PasswordAlreadySet(UserOnboardingError):
 class InvalidOnboardingState(UserOnboardingError):
     pass
 
+
 class ProfileAlreadyCompletedError(UserOnboardingError):
     pass
 
@@ -65,20 +56,15 @@ class UserOnboarding:
         """
         Step 1–3:
         - Phone submitted
-        - Rate-limit gate
         - OTP issued & stored
         """
 
         normalized_phone = normalize_phone(phone)
 
-        # Step 2: rate-limit
-        await enforce_otp_rate_limit(normalized_phone)
-
-        # Step 3: generate + hash + store OTP
-        otp = await issue_otp(phone=normalized_phone)
-
-        # (TEMP) You will remove this once SMS is wired
-        # print(f"OTP for {normalized_phone}: {otp}")
+        await issue_otp(
+            phone=normalized_phone,
+            purpose=OTPPurpose.SIGNUP,
+        )
 
         return PhoneSubmitResponse(
             phone=normalized_phone,
@@ -98,10 +84,12 @@ class UserOnboarding:
         - PreUser creation (idempotent)
         """
 
-        # Step 4: Redis-based OTP verification
-        await verify_otp_flow(phone=phone, otp=otp)
+        await verify_otp_flow(
+            phone=phone,
+            otp=otp,
+            purpose=OTPPurpose.SIGNUP,
+        )
 
-        # Step 5: DB backed PreUser creation
         await create_preuser(
             db=db,
             phone=phone,
@@ -111,7 +99,6 @@ class UserOnboarding:
             phone=phone,
             status=OnboardingState.PREUSER_CREATED,
         )
-    
 
     @staticmethod
     async def set_password(
@@ -121,7 +108,8 @@ class UserOnboarding:
         password: str,
     ) -> None:
         """
-        Handle password setup after OTP verification.
+        Step 6:
+        - Set password after OTP verification
         """
 
         try:
@@ -134,7 +122,7 @@ class UserOnboarding:
             raise PasswordAlreadySet()
         except InvalidPreUserState:
             raise InvalidOnboardingState()
-        
+
     @staticmethod
     async def complete_basic_profile(
         *,
@@ -179,13 +167,11 @@ class UserOnboarding:
         repo = PreUserRepository()
         preuser = await repo.get_by_phone(db, phone)
 
-        decision = await evaluate_risk(
+        return await evaluate_risk(
             preuser=preuser,
             otp_retry_count=otp_retry_count,
             db=db,
         )
-
-        return decision
 
     @staticmethod
     async def create_limited_account(
@@ -205,6 +191,7 @@ class UserOnboarding:
             )
         except RiskNotApproved:
             raise InvalidOnboardingState()
+
     @staticmethod
     async def submit_kyc(
         *,
@@ -258,8 +245,13 @@ class UserOnboarding:
         )
 
     @staticmethod
-    async def upgrade_to_full(*, db, account) -> None:
+    async def upgrade_to_full(
+        *,
+        db: AsyncSession,
+        account,
+    ) -> None:
         """
-        STEP 12: Upgrade account to FULL tier and remove limits
+        Step 12:
+        - Upgrade account to FULL tier
         """
         await upgrade_account_to_full(db=db, account=account)

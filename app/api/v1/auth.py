@@ -19,18 +19,20 @@ from app.orchestration.UserOnboarding import (
     InvalidOnboardingState
 )    
 
+from app.domain.auth.otp_purpose import OTPPurpose
+
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/send-otp")
 async def send_otp_route(payload: RequestOTP):
-    await send_otp(payload.phone)
+    await send_otp(payload.phone, OTPPurpose.LOGIN)
     return {"status": "otp_sent"}
 
 @router.post("/verify-otp")
 async def verify_otp_route(payload: VerifyOTP):
-    valid = await verify_otp(payload.phone, payload.otp)
+    valid = await verify_otp(payload.phone, payload.otp, OTPPurpose.LOGIN)
 
     if not valid:
         return {"valid": False}

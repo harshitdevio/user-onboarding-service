@@ -1,5 +1,5 @@
 from app.repository.account.account import AccountRepository
-from app.domain.risks import RiskDecision
+from app.domain.risks.evaluate import RiskDecision
 
 
 class RiskNotApproved(Exception):

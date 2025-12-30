@@ -45,5 +45,4 @@ async def verify_otp_flow(*, phone: str, otp: str) -> None:
     # FAILURE: enforce verification rate-limit
     await enforce_otp_verify_rate_limit(phone)
 
-    # Finally, raise generic invalid exception
     raise OTPInvalid("Incorrect OTP provided.")

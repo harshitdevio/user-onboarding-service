@@ -6,12 +6,12 @@ A production-inspired authentication and onboarding backend that demonstrates:
 - Redis-backed rate limiting
 - Async, layered architecture with FastAPI
 
-📄 API Docs: https://tinyurl.com/harshitdev  
+📄 API Docs: (https://finguard-backend-4o9g.onrender.com/docs#/Auth/submit_phone_v1_auth_signup_phone_post)  
 📦 Deployed on Render  
 🐳 Dockerized for local & prod parity
 
 
-# FinGuard Backend
+# user-onboarding-service
 
 **Production-inspired backend authentication service** built with FastAPI and async SQLAlchemy.  
 Demonstrates OTP-based authentication, state-driven onboarding, token issuance, and modular architecture inspired by real-world product flows.
@@ -77,7 +77,7 @@ This exposes:
 - Request/response contracts
 - Error and state transition responses
 
-👉 Swagger Link: https://tinyurl.com/harshitdev 
+👉 Swagger Link: (https://finguard-backend-4o9g.onrender.com/docs#/Auth/submit_phone_v1_auth_signup_phone_post) 
 
 
 ---
@@ -151,6 +151,7 @@ to keep business rules independent from frameworks and external services.
 
 
 Note: KYC, risk evaluation, and external compliance-related components are intentionally mocked or simplified. The goal of this project is to demonstrate backend system design, flow orchestration, and code structure, not to replicate real-world fintech compliance.
+
 
 
 

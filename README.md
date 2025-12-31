@@ -79,6 +79,77 @@ This exposes:
 
 👉 Swagger Link: (https://finguard-backend-4o9g.onrender.com/docs#/Auth/submit_phone_v1_auth_signup_phone_post) 
 
+## Try it in 60 Seconds
+
+This deployment exposes a frictionless demo flow that completes a full OTP-based signup path.
+
+### Demo Rules
+- OTP verification is mocked in demo mode
+- **OTP value is always:** `000000`
+- OTP rate-limits are enforced but reset automatically
+- KYC, risk evaluation, and compliance steps are stubbed
+- Focus is on backend flow orchestration, not real compliance
+
+---
+
+## End-to-End Signup Flow
+
+### 1. Send OTP (Rate-limit + Abuse Checks)
+
+
+curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/send-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+15555555555"
+  }'
+
+
+### 2. Verify OTP
+curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+15555555555",
+    "otp": "000000"
+  }'
+
+### 3. Start Signup (PreUser Creation)
+
+curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/signup/phone \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+15555555555"
+  }'
+
+### Verify Signup OTP
+
+curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/signup/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+15555555555",
+    "otp": "000000"
+  }'
+
+### 5. Set Password
+curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/signup/set-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+15555555555",
+    "password": "StrongPassword@123"
+  }'
+
+## Modeled Account Lifecycle
+UNVERIFIED (PreUser)
+   ↓
+OTP Verified
+   ↓
+Credentials Set
+   ↓
+LIMITED Account
+   ↓
+(KYC + Risk Evaluation — Stubbed)
+   ↓
+FULL Account
+
 
 ---
 ## 🛠️ Tech Stack
@@ -151,6 +222,7 @@ to keep business rules independent from frameworks and external services.
 
 
 Note: KYC, risk evaluation, and external compliance-related components are intentionally mocked or simplified. The goal of this project is to demonstrate backend system design, flow orchestration, and code structure, not to replicate real-world fintech compliance.
+
 
 
 

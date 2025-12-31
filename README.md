@@ -6,9 +6,12 @@ A production-inspired authentication and onboarding backend that demonstrates:
 - Redis-backed rate limiting
 - Async, layered architecture with FastAPI
 
-📄 API Docs: (https://finguard-backend-4o9g.onrender.com/docs#/Auth/submit_phone_v1_auth_signup_phone_post)  
+  
+
+📄 API Docs: (https://finguard-backend-4o9g.onrender.com/docs)  
 📦 Deployed on Render  
 🐳 Dockerized for local & prod parity
+
 
 
 # user-onboarding-service
@@ -43,7 +46,7 @@ The goal is to showcase how complex authentication and onboarding flows can be o
 
 ## 🔐 Authentication & Onboarding Flow
 The system models real-world signup and login flows as explicit state transitions rather than implicit conditionals.
-
+```
 1. Phone number submitted
 2. Rate-limit and abuse checks
 3. OTP issued
@@ -68,76 +71,92 @@ The system models real-world signup and login flows as explicit state transition
             L4. Step-up check (PIN / secondary auth)
             L5. Token issuance (scoped access + refresh)
             L6. Login result contract (auth state, account tier, token payload)
+```
 
- ## API Documentation
+## 📘 API Documentation
 Interactive API documentation is available via Swagger UI.
 
-This exposes:
-- Auth and onboarding endpoints
-- Request/response contracts
-- Error and state transition responses
+👉 https://finguard-backend-4o9g.onrender.com/docs#/Auth/submit_phone_v1_auth_signup_phone_post
 
-👉 Swagger Link: (https://finguard-backend-4o9g.onrender.com/docs#/Auth/submit_phone_v1_auth_signup_phone_post) 
-
-## Try it in 60 Seconds
-
-This deployment exposes a frictionless demo flow that completes a full OTP-based signup path.
+## ⚡ Try It in 60 Seconds
 
 ### Demo Rules
 - OTP verification is mocked in demo mode
 - **OTP value is always:** `000000`
 - OTP rate-limits are enforced but reset automatically
 - KYC, risk evaluation, and compliance steps are stubbed
-- Focus is on backend flow orchestration, not real compliance
+- Focus is on backend flow orchestration
 
 ---
 
-## End-to-End Signup Flow
+## 🔄 End-to-End Signup Flow
 
 ### 1. Send OTP (Rate-limit + Abuse Checks)
 
-
+```bash
 curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/send-otp \
   -H "Content-Type: application/json" \
   -d '{
     "phone": "+15555555555"
   }'
+```
 
+---
 
 ### 2. Verify OTP
+
+```bash
 curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "phone": "+15555555555",
     "otp": "000000"
   }'
+```
+
+---
 
 ### 3. Start Signup (PreUser Creation)
 
+```bash
 curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/signup/phone \
   -H "Content-Type: application/json" \
   -d '{
     "phone": "+15555555555"
   }'
+```
 
-### Verify Signup OTP
+---
 
+### 4. Verify Signup OTP
+
+```bash
 curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/signup/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "phone": "+15555555555",
     "otp": "000000"
   }'
+```
+
+---
 
 ### 5. Set Password
+
+```bash
 curl -X POST https://finguard-backend-4o9g.onrender.com/v1/auth/signup/set-password \
   -H "Content-Type: application/json" \
   -d '{
     "phone": "+15555555555",
     "password": "StrongPassword@123"
   }'
+```
 
-## Modeled Account Lifecycle
+---
+
+## 🔁 Modeled Account Lifecycle
+
+```
 UNVERIFIED (PreUser)
    ↓
 OTP Verified
@@ -149,7 +168,7 @@ LIMITED Account
 (KYC + Risk Evaluation — Stubbed)
    ↓
 FULL Account
-
+```
 
 ---
 ## 🛠️ Tech Stack
@@ -167,7 +186,7 @@ FULL Account
 
 
 ## 📂 Project Structure
-
+```
 .
 ├── app/
 
@@ -188,40 +207,14 @@ FULL Account
 ├── docker-compose.yml  
 ├── pyproject.toml  
 └── README.md
+```
+```
 
-This structure separates domain logic, orchestration, and infrastructure concerns
-to keep business rules independent from frameworks and external services.
+This structure separates domain logic, orchestration, and infrastructure concerns to keep business rules independent from frameworks and external services.
 
+```
 
-## 🔐 Authentication & Onboarding Flow
-
-1. Phone number submitted
-2. Rate-limit and abuse checks
-3. OTP issued
-4. OTP verified
-        │
-
-        ├── Signup Flow
-        │
-        │   S1. PreUser created (UNVERIFIED, temporary user record)
-        │   S2. Credentials set (hashed)
-        │   S3. Basic profile completed
-        │   S4. Risk gate evaluation
-        │   S5. Limited account created
-        │   S6. KYC details submitted
-        │   S7. KYC verified
-        │   S8. Account upgraded to FULL
-        │
-        └── Login Flow
-            L1. Identity lookup
-            L2. User status validated (ACTIVE / BLOCKED)
-            L3. Account state guard (LIMITED / FULL)
-            L4. Step-up check (PIN / secondary auth)
-            L5. Token issuance (scoped access + refresh)
-            L6. Login result contract (auth state, account tier, token payload)
-
-
-Note: KYC, risk evaluation, and external compliance-related components are intentionally mocked or simplified. The goal of this project is to demonstrate backend system design, flow orchestration, and code structure, not to replicate real-world fintech compliance.
+> **Note**: KYC, risk evaluation, and external compliance-related components are intentionally mocked or simplified. The goal is to demonstrate backend system design, flow orchestration, and code structure, not real-world fintech compliance.
 
 
 

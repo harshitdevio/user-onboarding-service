@@ -1,27 +1,84 @@
+## TL;DR
+A production-inspired authentication and onboarding backend that demonstrates:
+- OTP-based login
+- State-driven user onboarding (LIMITED → FULL)
+- JWT access + refresh token issuance
+- Redis-backed rate limiting
+- Async, layered architecture with FastAPI
+
+📄 API Docs: https://tinyurl.com/harshitdev  
+📦 Deployed on Render  
+🐳 Dockerized for local & prod parity
+
+
 # FinGuard Backend
 
 **Production-inspired backend authentication service** built with FastAPI and async SQLAlchemy.  
 Demonstrates OTP-based authentication, state-driven onboarding, token issuance, and modular architecture inspired by real-world product flows.
 
 ## 🎯 Purpose
+Most real-world authentication systems go beyond simple email/password flows.
+This project is inspired by patterns commonly seen in fintech and high-security products, such as OTP-based signup and state-driven onboarding.
 
-This project is intended as a backend architecture showcase for learning
-and discussion, focusing on authentication, state management, and async service design.
+It demonstrates how production backend systems handle:
+- Multi-step onboarding
+- Explicit account state transitions
+- Partial users flows
+- Security and abuse prevention
+
+The goal is to showcase how complex authentication and onboarding flows can be orchestrated in a modular, testable, and async-first backend architecture.
+
 
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- State-driven authentication & onboarding flows  
-- OTP-based login and verification  
-- Account states: LIMITED → FULL  
-- Token-based authentication (JWT)  
-- Secure credential and password hashing  
-- Rate-limiting using Redis  
-- Modular, async-first architecture  
-- Stubbed KYC and transaction flows to focus on auth & state management  
- 
+- State-driven authentication & onboarding engine
+- OTP-based identity verification with abuse protection
+- Explicit account lifecycle: UNVERIFIED → LIMITED → FULL
+- JWT access & refresh token model with scoped permissions
+- Redis-backed rate limiting for OTP and login attempts
+- Async-first, layered architecture
+
+## 🔐 Authentication & Onboarding Flow
+The system models real-world signup and login flows as explicit state transitions rather than implicit conditionals.
+
+1. Phone number submitted
+2. Rate-limit and abuse checks
+3. OTP issued
+4. OTP verified
+        │
+
+        ├── Signup Flow
+        │
+        │   S1. PreUser created (UNVERIFIED, temporary user record)
+        │   S2. Credentials set (hashed)
+        │   S3. Basic profile completed
+        │   S4. Risk gate evaluation
+        │   S5. Limited account created
+        │   S6. KYC details submitted
+        │   S7. KYC verified
+        │   S8. Account upgraded to FULL
+        │
+        └── Login Flow
+            L1. Identity lookup
+            L2. User status validated (ACTIVE / BLOCKED)
+            L3. Account state guard (LIMITED / FULL)
+            L4. Step-up check (PIN / secondary auth)
+            L5. Token issuance (scoped access + refresh)
+            L6. Login result contract (auth state, account tier, token payload)
+
+ ## API Documentation
+Interactive API documentation is available via Swagger UI.
+
+This exposes:
+- Auth and onboarding endpoints
+- Request/response contracts
+- Error and state transition responses
+
+👉 Swagger Link: https://tinyurl.com/harshitdev 
+
 
 ---
 ## 🛠️ Tech Stack
@@ -94,6 +151,7 @@ to keep business rules independent from frameworks and external services.
 
 
 Note: KYC, risk evaluation, and external compliance-related components are intentionally mocked or simplified. The goal of this project is to demonstrate backend system design, flow orchestration, and code structure, not to replicate real-world fintech compliance.
+
 
 
 

@@ -12,6 +12,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.main import app as fastapi_app
 from app.db.base import Base
+import app.core.redis
+
 try:
     from app.core.config import settings
 except Exception as e:
@@ -146,3 +148,12 @@ async def clean_state(async_db: AsyncSession):
     finally:
         await async_db.rollback()
         async_db.expire_all()
+
+
+@pytest.fixture(autouse=True)
+async def clear_redis():
+    """
+    Ensure Redis isolation between tests.
+    Integration tests MUST NOT leak state.
+    """
+    await app.core.redis.redis_client.flushdb()

@@ -11,18 +11,6 @@ from tests.factories.user_factory import create_user
 ENDPOINT = "/v1/auth/signup/phone"
 
 
-# -----------------------------
-# Global isolation
-# -----------------------------
-@pytest.fixture(autouse=True)
-async def clear_redis():
-    """
-    Ensure Redis isolation between tests.
-    Integration tests MUST NOT leak state.
-    """
-    await app.core.redis.redis_client.flushdb()
-
-
 @pytest.fixture
 def mock_sms_provider():
     """
@@ -32,10 +20,6 @@ def mock_sms_provider():
     with patch("app.interegation.SMS.console.ConsoleSMSProvider.send") as mock_send:
         yield mock_send
 
-
-# -----------------------------
-# Tests
-# -----------------------------
 @pytest.mark.asyncio
 async def test_signup_phone_happy_path(
     integration_client: AsyncClient,
@@ -60,11 +44,9 @@ async def test_signup_phone_happy_path(
     assert body["phone"] == f"+91{phone}"
     assert body["status"] == "OTP_SENT"
 
-    # Redis: OTP must exist (do NOT assert exact key format)
     keys = await app.core.redis.redis_client.keys("otp:verify:signup:*")
     assert any(f"+91{phone}" in key for key in keys)
 
-    # DB: PreUser should NOT be created at this stage
     stmt = select(PreUser).where(PreUser.phone == f"+91{phone}")
     result = await async_db.execute(stmt)
     assert result.scalar_one_or_none() is None
@@ -96,11 +78,9 @@ async def test_signup_phone_existing_user_is_idempotent(
     assert response.status_code == 200
     assert response.json()["status"] == "OTP_SENT"
 
-    # Redis OTP must exist
     keys = await app.core.redis.redis_client.keys("otp:verify:signup:*")
     assert any(existing_phone in key for key in keys)
 
-    # DB must remain unchanged
     result_after = await async_db.execute(select(PreUser))
     preuser_count_after = len(result_after.scalars().all())
     assert preuser_count_after == preuser_count_before

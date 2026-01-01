@@ -32,7 +32,7 @@ async def redis_test():
     await client.flushall()
     yield client
     await client.flushall()
-    await client.close()
+    await client.aclose()
 
 from unittest.mock import patch
 
@@ -44,9 +44,6 @@ async def patch_redis_client_global(redis_test):
     """
     with patch("app.core.redis.redis_client", redis_test):
         yield
-
-
-
 
 
 @pytest.fixture
@@ -151,12 +148,19 @@ async def clean_state(async_db: AsyncSession):
 
 
 @pytest.fixture(autouse=True)
-async def clear_redis():
+async def patch_redis_client_global(redis_test):
     """
-    Ensure Redis isolation between tests.
-    Integration tests MUST NOT leak state.
+    Patch the global redis_client with the test-scoped redis_test client.
     """
-    await app.core.redis.redis_client.flushdb()
+    await redis_test.flushdb()
+    with patch("app.core.redis.redis_client", redis_test):
+        yield
+    await redis_test.flushdb()
+
+@pytest.fixture(autouse=True)
+async def ensure_redis(patch_redis_client_global):
+    pass
+
 
 @pytest.fixture
 def mock_sms_provider():

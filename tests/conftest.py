@@ -1,92 +1,90 @@
-import asyncio
 import os
 import time
-from typing import AsyncGenerator
-
+import asyncio
 import pytest
 import docker
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-)
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+
 from httpx import AsyncClient
 from fastapi import FastAPI
 
-from app.core.config import settings
-from app.db.base import Base 
-import app.db.models
-from app.main import app as fastapi_app  
-
 from dotenv import load_dotenv
-import os
+
+from app.core.config import settings
+from app.db.base import Base
+import app.db.models  # noqa: F401
+from app.main import app as fastapi_app
 
 load_dotenv()
 
-user = os.getenv("TEST_POSTGRES_USER")
-password = os.getenv("TEST_POSTGRES_PASSWORD")
-db = os.getenv("TEST_POSTGRES_DB")
+POSTGRES_USER = os.getenv("TEST_POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("TEST_POSTGRES_PASSWORD", "postgres")
+POSTGRES_DB = os.getenv("TEST_POSTGRES_DB", "finguard_test")
+POSTGRES_PORT = 5433
 
+ADMIN_DB_URL = (
+    f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
+    f"@localhost:{POSTGRES_PORT}/postgres"
+)
 
+TEST_DB_URL = (
+    f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
+    f"@localhost:{POSTGRES_PORT}/{POSTGRES_DB}"
+)
 
-
-
-
-
-# Temporary Postgres Via Docker
 @pytest.fixture(scope="session")
 def postgres_container():
     client = docker.from_env()
 
     container = client.containers.run(
-        "postgres:16-alpine",
-        name="test-postgres",
+        image="postgres:16",
+        name="finguard-test-postgres",
         environment={
-            "POSTGRES_USER": "test",
-            "POSTGRES_PASSWORD": "test",
-            "POSTGRES_DB": "test_db",
+            "POSTGRES_USER": POSTGRES_USER,
+            "POSTGRES_PASSWORD": POSTGRES_PASSWORD,
         },
-        ports={"5432/tcp": 5433},   # host 5433 → container 5432
+        ports={"5432/tcp": POSTGRES_PORT},
         detach=True,
-        auto_remove=True,
+        remove=True,
     )
 
-    time.sleep(2)
-    retries = 10
-    while retries:
-        try:
-            import psycopg2
-            psycopg2.connect(
-                host="localhost",
-                port=5433,
-                user="test",
-                password="test",
-                database="test_db"
-            )
-            break
-        except Exception:
-            retries -= 1
-            time.sleep(1)
+    time.sleep(5)
 
-    if retries == 0:
-        raise RuntimeError("Postgres test container did not start in time")
+    yield
 
-    yield container
+    container.stop()
 
-# Database Engine (async)
+@pytest.fixture(scope="session")
 async def test_engine(postgres_container):
-    test_db_url = (
-        f"postgresql+asyncpg://{user}:{password}@localhost:5433/{db}"
+    admin_engine = create_async_engine(
+        ADMIN_DB_URL,
+        isolation_level="AUTOCOMMIT",
+        future=True,
     )
+
+    async with admin_engine.connect() as conn:
+        result = await conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = :db"),
+            {"db": POSTGRES_DB},
+        )
+        exists = result.scalar()
+
+        if not exists:
+            await conn.execute(text(f'CREATE DATABASE "{POSTGRES_DB}"'))
+
+    await admin_engine.dispose()
 
     engine = create_async_engine(
-        test_db_url,
+        TEST_DB_URL,
         echo=False,
         future=True,
         pool_pre_ping=True,
     )
 
-    # Create full schema for test database
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -95,27 +93,35 @@ async def test_engine(postgres_container):
 
     await engine.dispose()
 
-# FastAPI Dependency Override
-@pytest.fixture()
-def override_app(db_session):
+@pytest.fixture
+async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
+    async_session = sessionmaker(
+        bind=test_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
 
+    async with async_session() as session:
+        yield session
+
+
+@pytest.fixture
+def override_app(db_session):
     app = fastapi_app
 
     async def _override_get_db():
         async with db_session as s:
             yield s
 
-    # Apply override
     app.dependency_overrides.clear()
     app.dependency_overrides[settings.get_db_dependency] = _override_get_db
 
     yield app
 
-    # Cleanup overrides after test
     app.dependency_overrides.clear()
 
-# async test client using httpx
-@pytest.fixture()
+
+@pytest.fixture
 async def client(override_app: FastAPI):
     async with AsyncClient(
         app=override_app,

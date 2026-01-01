@@ -187,9 +187,7 @@ FULL Account
 
 ## 📂 Project Structure
 ```
-.
 ├── app/
-
 │   ├── api/         
 │   ├── auth/           
 │   ├── core/           
@@ -215,6 +213,7 @@ This structure separates domain logic, orchestration, and infrastructure concern
 ```
 
 > **Note**: KYC, risk evaluation, and external compliance-related components are intentionally mocked or simplified. The goal is to demonstrate backend system design, flow orchestration, and code structure, not real-world fintech compliance.
+
 
 
 

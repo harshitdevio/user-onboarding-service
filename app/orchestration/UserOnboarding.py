@@ -85,6 +85,8 @@ class UserOnboarding:
         - PreUser creation (idempotent)
         """
 
+        normalized_phone = normalize_phone(phone)
+
         await verify_otp_flow(
             phone=phone,
             otp=otp,
@@ -93,13 +95,13 @@ class UserOnboarding:
 
         await create_preuser(
             db=db,
-            phone=phone,
+            phone=normalized_phone,
         )
 
         return OTPVerifyResponse(
-            phone=phone,
+            phone=normalized_phone,
             status=OnboardingState.PREUSER_CREATED,
-            temp_token=create_signup_token(phone=phone),
+            temp_token=create_signup_token(phone=normalized_phone),
         )
 
     @staticmethod

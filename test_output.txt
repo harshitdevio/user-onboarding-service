@@ -1,0 +1,130 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.2, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\Harshit\Desktop\Projects\FinGuard
+configfile: pytest.ini
+plugins: anyio-4.11.0, Faker-38.2.0, asyncio-1.3.0, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests\e2e\test_full_user_onboarding.py E                                 [100%]
+
+=================================== ERRORS ====================================
+____________ ERROR at setup of test_user_onboarding_happy_path_e2e ____________
+
+self = Connection<host=localhost,port=6379,db=0>
+
+    async def connect(self):
+        """Connects to the Redis server if not already connected"""
+        if self.is_connected:
+            return
+        try:
+>           await self.retry.call_with_retry(
+                lambda: self._connect(), lambda error: self.disconnect()
+            )
+
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\redis\asyncio\connection.py:243: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\redis\asyncio\retry.py:59: in call_with_retry
+    return await do()
+           ^^^^^^^^^^
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\redis\asyncio\connection.py:650: in _connect
+    reader, writer = await asyncio.open_connection(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\streams.py:48: in open_connection
+    transport, _ = await loop.create_connection(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:1171: in create_connection
+    raise exceptions[0]
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:1141: in create_connection
+    sock = await self._connect_sock(
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:1044: in _connect_sock
+    await self.sock_connect(sock, address)
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\proactor_events.py:726: in sock_connect
+    return await self._proactor.connect(sock, address)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\windows_events.py:804: in _poll
+    value = callback(transferred, key, ov)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+trans = 0, key = 0, ov = <_overlapped.Overlapped object at 0x0000018857046070>
+
+    def finish_connect(trans, key, ov):
+>       ov.getresult()
+E       ConnectionRefusedError: [WinError 1225] The remote computer refused the network connection
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\windows_events.py:600: ConnectionRefusedError
+
+During handling of the above exception, another exception occurred:
+
+self = <Coroutine test_user_onboarding_happy_path_e2e>
+
+    def setup(self) -> None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+>       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\pytest_asyncio\plugin.py:743: in pytest_fixture_setup
+    hook_result = yield
+                  ^^^^^
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\pytest_asyncio\plugin.py:313: in _asyncgen_fixture_wrapper
+    result = runner.run(setup(), context=context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\pytest_asyncio\plugin.py:309: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\e2e\conftest.py:78: in flush_redis
+    await redis_client.flushdb()
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\redis\asyncio\client.py:601: in execute_command
+    conn = self.connection or await pool.get_connection(command_name, **options)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\redis\asyncio\connection.py:1040: in get_connection
+    await self.ensure_connection(connection)
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\redis\asyncio\connection.py:1062: in ensure_connection
+    await connection.connect()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Connection<host=localhost,port=6379,db=0>
+
+    async def connect(self):
+        """Connects to the Redis server if not already connected"""
+        if self.is_connected:
+            return
+        try:
+            await self.retry.call_with_retry(
+                lambda: self._connect(), lambda error: self.disconnect()
+            )
+        except asyncio.CancelledError:
+            raise  # in 3.7 and earlier, this is an Exception, not BaseException
+        except (socket.timeout, asyncio.TimeoutError):
+            raise TimeoutError("Timeout connecting to server")
+        except OSError as e:
+>           raise ConnectionError(self._error_message(e))
+E           redis.exceptions.ConnectionError: Error 22 connecting to localhost:6379. 22.
+
+..\..\..\AppData\Local\pypoetry\Cache\virtualenvs\finguard-j6uSuCjI-py3.13\Lib\site-packages\redis\asyncio\connection.py:251: ConnectionError
+============================== warnings summary ===============================
+app\schemas\account.py:7
+  C:\Users\Harshit\Desktop\Projects\FinGuard\app\schemas\account.py:7: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    currency: str = Field(..., example="INR")
+
+app\schemas\account.py:10
+  C:\Users\Harshit\Desktop\Projects\FinGuard\app\schemas\account.py:10: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class AccountResponse(BaseModel):
+
+app\schemas\transactions.py:16
+  C:\Users\Harshit\Desktop\Projects\FinGuard\app\schemas\transactions.py:16: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TransactionOut(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/e2e/test_full_user_onboarding.py::test_user_onboarding_happy_path_e2e
+======================== 3 warnings, 1 error in 8.35s =========================

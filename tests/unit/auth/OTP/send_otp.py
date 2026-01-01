@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 from app.auth.OTP.service import send_otp
 from app.auth.OTP.otp_exceptions import OTPRateLimitExceeded
 from app.core.security.otp import OTP_EXPIRY
-
+from app.core.security.otp_keys import _otp_key
+from app.domain.auth.otp_purpose import OTPPurpose
 
 @pytest.mark.asyncio
 async def test_send_otp_success(mocker):
@@ -40,7 +41,7 @@ async def test_send_otp_success(mocker):
 
     assert result is True
     redis_set.assert_called_once_with(
-        f"otp:{normalized_phone}",
+        _otp_key(normalized_phone, OTPPurpose.SIGNUP),
         fixed_otp,
         ex=OTP_EXPIRY,
     )

@@ -9,6 +9,7 @@ from app.core.security.rate_limit import enforce_otp_rate_limit
 from app.core.security.hashing.otp import hash_otp
 from app.core.security.hashing.otp import verify_otp as hash_verify_otp
 from app.domain.auth.otp_purpose import OTPPurpose
+from app.core.security.otp_keys import _otp_key, _fail_key, _lock_key
 
 from app.auth.OTP.bruteforce import (
     is_locked,
@@ -32,17 +33,6 @@ from app.core.security.otp import (
 
 logger = get_logger(__name__)
 
-
-def _otp_key(phone: str, purpose: OTPPurpose) -> str:
-    return f"otp:{purpose}:{phone}"
-
-
-def _fail_key(phone: str, purpose: OTPPurpose) -> str:
-    return f"otp_fail:{purpose}:{phone}"
-
-
-def _lock_key(phone: str, purpose: OTPPurpose) -> str:
-    return f"otp_lock:{purpose}:{phone}"
 
 
 async def send_otp(phone: str, purpose: OTPPurpose) -> bool:
